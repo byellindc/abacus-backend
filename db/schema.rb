@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_04_01_215244) do
+ActiveRecord::Schema.define(version: 2019_04_01_223801) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -23,6 +23,17 @@ ActiveRecord::Schema.define(version: 2019_04_01_215244) do
     t.index ["user_id"], name: "index_documents_on_user_id"
   end
 
+  create_table "lines", force: :cascade do |t|
+    t.bigint "document_id"
+    t.string "input"
+    t.string "processed"
+    t.string "name"
+    t.decimal "result"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_lines_on_document_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name"
     t.string "username"
@@ -33,4 +44,5 @@ ActiveRecord::Schema.define(version: 2019_04_01_215244) do
   end
 
   add_foreign_key "documents", "users"
+  add_foreign_key "lines", "documents"
 end

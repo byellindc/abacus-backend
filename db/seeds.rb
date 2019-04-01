@@ -11,5 +11,15 @@ bob = User.create!(
 
 doc = Document.create!(
   user: bob,
-  title: 'Untitled'
+  title: "Untitled"
+)
+
+Line.create!(
+  input: "1+1",
+  document: doc
+)
+
+Line.create!(
+  input: "1+2",
+  document: doc
 )
