@@ -6,6 +6,7 @@ class Calculator
     @internal = Dentaku::Calculator.new
   end
 
+  # store key/value variables pairs
   def store(key, value)
     @store[key] = value
     @internal.store(key, value)
