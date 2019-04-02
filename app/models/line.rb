@@ -1,19 +1,20 @@
 class Line < ApplicationRecord
   belongs_to :document
+  after_update :update_result
 
-  def result
-    update_result if should_update? 
-    read_attribute(:result)
-  end
+  private
   
-  private 
-
-  def should_update?
-    self.updated? || !read_attribute(:result)
+  def process_input
+    # for now just pass raw input into processed input
+    self.processed = self.input
   end
 
   def update_result
-    # actually update the result
-    self.updated = false
+    self.process_input
+    self.result = self.eval
+  end
+
+  def eval
+    self.document.eval(self.processed)
   end
 end
