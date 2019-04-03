@@ -14,12 +14,28 @@ doc = Document.create!(
   title: "Untitled"
 )
 
+doc2 = Document.create!(
+  user: bob,
+  title: "Untitled 2"
+)
+
 Line.create!(
   input: "1+1",
+  processed: "1+1",
+  result: 2,
   document: doc
 )
 
 Line.create!(
   input: "1+2",
+  processed: "1+2",
+  result: 3,
   document: doc
+)
+
+Line.create!(
+  input: "1+1",
+  processed: "1+1",
+  result: 2,
+  document: doc2
 )
