@@ -3,7 +3,7 @@ class Document < ApplicationRecord
   has_many :lines, dependent: :destroy
 
   def eval(expression)
-     calculator.eval(expression)
+    calculator.eval(expression)
   end
 
   private 
