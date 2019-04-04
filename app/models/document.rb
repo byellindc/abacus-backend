@@ -22,18 +22,19 @@ class Document < ApplicationRecord
 
   def ensure_title
     # if no title is specified, generate incremented default
-    if !self.title
-      self.update(title: Document.next_default_title)
-    end
+    self.update(title: Document.next_default_title) if !self.title
   end
 
   def self.last_default_title
+    # returns last title of default-titled document ('Untitled...')
     Document
       .where("title LIKE :prefix", prefix: "#{DEFAULT_TITLE}%")
       .pluck(:title).last || DEFAULT_TITLE
   end
 
   def self.last_default_index
+    # returns last numeric value of default-titled document
+    # defaults to 1
     index = Document.last_default_title.scan(/\d+/).first.to_i
     index == 0 ? 1 : index
   end
