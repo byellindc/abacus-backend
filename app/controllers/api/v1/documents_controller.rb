@@ -1,6 +1,7 @@
 class Api::V1::DocumentsController < ApplicationController
   def index
-    render json: Document.all, status: :accepted
+    documents = Document.all.order(:created_at)
+    render json: documents, status: :accepted
   end
   
   def show
