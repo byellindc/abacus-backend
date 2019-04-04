@@ -11,7 +11,7 @@ class Api::V1::DocumentsController < ApplicationController
   end
   
   def update
-    @document.update(line_params)
+    @document.update(document_params)
     if @document.save
       render json: @document, status: :accepted
     else

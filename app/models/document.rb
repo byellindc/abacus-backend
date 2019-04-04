@@ -29,7 +29,7 @@ class Document < ApplicationRecord
   def self.last_default_title
     # returns last title of default-titled document ('Untitled...')
     Document
-      .where("title LIKE :prefix", prefix: "#{DEFAULT_TITLE}%")
+      .where("title LIKE :prefix", prefix: "#{DEFAULT_TITLE} %")
       .pluck(:title).last || DEFAULT_TITLE
   end
 
