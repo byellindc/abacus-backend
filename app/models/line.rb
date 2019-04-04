@@ -36,6 +36,6 @@ class Line < ApplicationRecord
     # recast result if it can be expressed as an integer
     # e.g. 1.0 => 1, 1.1 => 1.1
     result_val = self.read_attribute(:result)
-    result_val == result_val.to_i ? result_val.to_i : result_val
+    result_val == result_val.to_i ? result_val.to_i : result_val.to_f
   end
 end
