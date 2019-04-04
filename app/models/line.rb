@@ -1,33 +1,41 @@
 class Line < ApplicationRecord
   belongs_to :document
-
   before_save :reprocess
 
   def reprocess
-    if self.input_changed?
-      self.reload_processed
-      self.reload_result
+    if input_changed?
+      reload_processed
+      reload_result
     end
   end
-  
+
+  def result
+    result_formatted
+  end
+
+  private
+ 
+  def evaluated_result
+    document.eval(processed)
+  end
+
+  def reload_processed
+    processed = processed_input
+  end
+
+  def reload_result
+    result = evaluated_result
+  end
+ 
   def processed_input
     # for now just pass raw input into processed input
     self.input
   end
 
-  def evaluated_result
-    self.document.eval(self.processed)
-  end
-
-  def reload_processed
-    self.processed = self.processed_input
-  end
-
-  def reload_result
-    self.result = self.evaluated_result
-  end
-
   def result_formatted
-    # truncate any unecessary zeros
+    # recast result if it can be expressed as an integer
+    # e.g. 1.0 => 1, 1.1 => 1.1
+    result_val = self.read_attribute(:result)
+    result_val == result_val.to_i ? result_val.to_i : result_val
   end
 end
