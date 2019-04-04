@@ -20,11 +20,11 @@ class Line < ApplicationRecord
   end
 
   def reload_processed
-    processed = processed_input
+    self.processed = processed_input
   end
 
   def reload_result
-    result = evaluated_result
+    self.result = evaluated_result
   end
  
   def processed_input
