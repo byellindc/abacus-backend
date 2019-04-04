@@ -1,6 +1,7 @@
 class Document < ApplicationRecord
   belongs_to :user
   has_many :lines, dependent: :destroy
+  accepts_nested_attributes_for :lines
 
   DEFAULT_TITLE = 'Untitled'
   after_create :ensure_title
