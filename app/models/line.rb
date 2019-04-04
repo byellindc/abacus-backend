@@ -1,30 +1,30 @@
 class Line < ApplicationRecord
   belongs_to :document
 
-  # before_update :update_result
-  # before_create :update_result
+  before_save :reprocess
 
-  # skip_callback :update, :after, :update_result
-  # skip_callback :create, :after, :update_result
-
-  def update_result
-    self.process_input
-    self.result = self.eval
-    self.save
-  end
-
-  def eval
-    self.document.eval(self.processed)
+  def reprocess
+    if self.input_changed?
+      self.reload_processed
+      self.reload_result
+    end
   end
   
-  def process_input
+  def processed_input
     # for now just pass raw input into processed input
-    self.processed = self.input
+    self.input
   end
 
-  def process_input!
-    self.process_input
-    self.save
+  def evaluated_result
+    self.document.eval(self.processed)
+  end
+
+  def reload_processed
+    self.processed = self.processed_input
+  end
+
+  def reload_result
+    self.result = self.evaluated_result
   end
 
   def result_formatted
