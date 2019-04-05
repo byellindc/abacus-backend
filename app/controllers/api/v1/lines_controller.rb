@@ -7,6 +7,11 @@ class Api::V1::LinesController < ApplicationController
     render json: line, status: :accepted
   end
 
+  def create
+    line = Line.create(line_params)
+    render json: line, status: :accepted
+  end
+
   def update
     line.update(line_params)
     if line.save
@@ -15,11 +20,17 @@ class Api::V1::LinesController < ApplicationController
       render json: { errors: line.errors.full_messages }, status: :unprocessible_entity
     end
   end
+
+  def destroy
+    line = Line.find(params[:id])
+    line.destroy()
+    render json: line, status: :accepted
+  end
   
   private
 
   def line_params
-    params.permit(:input)
+    params.permit(:id, :input)
   end
 
   def document

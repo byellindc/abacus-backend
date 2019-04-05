@@ -1,5 +1,5 @@
 class Api::V1::DocumentsController < ApplicationController
-  before_action :get_document, except: %i(index)
+  before_action :get_document, except: %i(index destroy)
   
   def index
     documents = Document.all.order(:created_at)
@@ -8,6 +8,10 @@ class Api::V1::DocumentsController < ApplicationController
   
   def show
     render json: @document, status: :accepted
+  end
+
+  def create
+    document = Document.create(document_params)
   end
   
   def update
@@ -19,10 +23,16 @@ class Api::V1::DocumentsController < ApplicationController
     end
   end
 
+  def destroy
+    document = Document.find(params[:id])
+    document.destroy()
+    render json: document, status: :accepted
+  end
+
   private
 
   def document_params
-    params.permit(:title,)
+    params.permit(:id, :title, lines: [:id, :input])
   end
 
   def get_document
