@@ -1,4 +1,4 @@
 class LineSerializer < ActiveModel::Serializer
-  attributes :id, :input, :expression, :name, :result, :mode, :document_id
+  attributes :id, :input, :expression, :name, :result, :mode, :document_id, :created_at, :updated_at
   belongs_to :document
 end
