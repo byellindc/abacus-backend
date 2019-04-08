@@ -13,34 +13,13 @@ class Line < ApplicationRecord
     result_formatted
   end
 
-  private
- 
-  def evaluate_result
-    self.result = document.eval(expression)
+  def write(text)
+    self.update(input: text)
   end
 
-  # def reload_processed
-  #   self.processed = process_input
+  # def name
+  #   self.read_attribute(:name) || "line#{line_num}"
   # end
-
-  # def proccess_result
-  #   self.result = evaluate_result
-  # end
- 
-  # uses LineProcessor to convert raw input
-  # into a pure mathmatical expression
-  def process_expression
-    processor = LineProcessor.new(input, line_num)
-    self.name = processor.name
-    self.expression = processor.expression
-  end
-
-  # recast result if it can be expressed as an integer
-  # e.g. 1.0 => 1, 1.1 => 1.1
-  def result_formatted
-    result_val = self.read_attribute(:result)
-    result_val == result_val.to_i ? result_val.to_i : result_val.to_f
-  end
 
   # line's index within document
   def index
@@ -48,6 +27,34 @@ class Line < ApplicationRecord
   end
 
   def line_num
-    index + 1
+    self.index ? self.index + 1 : 0
+  end
+
+  private
+ 
+  def evaluate_result
+    self.result = document.eval(self.expression)
+  end
+ 
+  # uses LineProcessor to convert raw input
+  # into a pure mathmatical expression
+  def process_expression
+    processor = LineProcessor.new(self.input)
+    self.name = processor.name
+    self.expression = processor.expression
+    save_variable
+  end
+
+  def save_variable
+    if self.name 
+      self.document.save_variable(self.name, self)
+    end
+  end
+
+  # recast result if it can be expressed as an integer
+  # e.g. 1.0 => 1, 1.1 => 1.1
+  def result_formatted
+    result_val = self.read_attribute(:result)
+    result_val == result_val.to_i ? result_val.to_i : result_val.to_f
   end
 end

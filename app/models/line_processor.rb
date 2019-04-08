@@ -1,12 +1,9 @@
 class LineProcessor
   attr_reader :input, :name, :expression
 
-  def initialize(input, line_num = 1)
+  def initialize(input)
     @input = input
     @expression = input
-
-    @line_num = line_num
-    @name = "line#{line_num+1}"
     process
   end
 
@@ -17,10 +14,9 @@ class LineProcessor
     process_unit_conversions
   end
 
-  # def self.process(input, index = 0)
-  #   formatter = LineProcessor.new(input)
-  #   return {name: }
-  # end
+  def has_variable?
+    return !!@name
+  end
 
   private
 

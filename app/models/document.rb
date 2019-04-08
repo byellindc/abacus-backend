@@ -6,8 +6,22 @@ class Document < ApplicationRecord
   DEFAULT_TITLE = 'Untitled'
   after_create :ensure_title
 
-  def eval(expression)
+  def eval(expression_or_line)
+    if expression_or_line.is_a? Line
+      expression = line.expression
+    else
+      expression = expression_or_line
+    end
+
     calculator.eval(expression)
+  end
+
+  def save_variable(name, line)
+    calculator.save(name, line.result)
+  end
+
+  def variables
+    calculator.variables
   end
 
   def raw_total
@@ -48,9 +62,10 @@ class Document < ApplicationRecord
     "#{DEFAULT_TITLE} #{Document.next_default_index}"
   end
 
-  private 
-
   def calculator
     @calculator ||= Calculator.new
   end
+
+  private 
+
 end
