@@ -1,9 +1,9 @@
 # seed utils
 
-OPERATORS = %w(+ - * /)
+# OPERATORS = %w(+ - * /)
 
 def rand_operator
-  OPERATORS.sample
+  %w(+ - * /).sample
 end
 
 # random number between min/max
@@ -41,4 +41,9 @@ def rand_math_expressions
   end
 
   expressions.join(' ')
+end
+
+def rand_percentage_expression
+  operator = %w(of off on).sample
+  ["#{rand_num(2, 60)}%", operator, rand_num].join(' ')
 end
