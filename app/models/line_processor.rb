@@ -14,6 +14,8 @@ class LineProcessor
     process_word_operators
     process_percentage_expression
     process_unit_conversions
+    trim_whitespace
+    validate
   end
 
   def has_variable?
@@ -70,6 +72,21 @@ class LineProcessor
     if @input =~ %r{^\s*[/]{2}}
       @mode = :comment
       @expression = ''
+    end
+  end
+
+  # remove leading and trailing whitespace from expression
+  def trim_whitespace
+    @expression.strip!
+  end
+
+  # if non-blank expression is invalid
+  # then mark mode as :invalid
+  def validate
+    if !@expression || @expression.blank?
+      return
+    elsif !Calculator.valid?(expression)
+      @mode = :invalid
     end
   end
 end

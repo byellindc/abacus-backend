@@ -1,12 +1,22 @@
 require 'dentaku'
 
 class Calculator
-  def initialize()
+  def initialize
     @internal = Dentaku::Calculator.new
+  end
+
+  # if expression evaluates to nil
+  # then assume invalid
+  def self.valid?(expression)
+    !!Calculator.new.eval(expression)
   end
 
   def eval(expression)
     @internal.evaluate(expression)
+  end
+
+  def eval!(expression)
+    @internal.evaluate!(expression)
   end
 
   # store key/value variables pairs
