@@ -64,8 +64,8 @@ class LineProcessor
   def process_unit_conversions
   end
 
-  # line is a comment if it matches `//[...]`
-  # in which case the processed expression will be blank 
+  # comments resemble c-style, single-line statements `//[...]`
+  # when commented out, the processed expression will be blank 
   def process_comments
     if @input =~ %r{^\s*[/]{2}}
       @mode = :comment
