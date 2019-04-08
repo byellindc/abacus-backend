@@ -1,6 +1,6 @@
 class Document < ApplicationRecord
   belongs_to :user
-  has_many :lines, dependent: :destroy
+  has_many :lines, -> { order(created_at: :asc) }, dependent: :destroy
   accepts_nested_attributes_for :lines
 
   DEFAULT_TITLE = 'Untitled'
