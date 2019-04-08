@@ -1,7 +1,5 @@
 # seed utils
 
-# OPERATORS = %w(+ - * /)
-
 def rand_operator
   %w(+ - * /).sample
 end
