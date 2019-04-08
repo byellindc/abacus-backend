@@ -1,13 +1,15 @@
 class LineProcessor
-  attr_reader :input, :name, :expression
+  attr_reader :input, :name, :expression, :mode
 
   def initialize(input)
     @input = input
     @expression = input
+    @mode = :calculation
     process
   end
 
   def process
+    process_comments
     process_variable
     process_word_operators
     process_percentage_expression
@@ -41,6 +43,12 @@ class LineProcessor
   def process_unit_conversions
   end
 
+  # line is a comment if it matches `//[...]`
+  # in which case the processed expression will be blank 
   def process_comments
+    if @input =~ %r{^\s*[/]{2}}
+      @mode = :comment
+      @expression = ''
+    end
   end
 end

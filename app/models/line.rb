@@ -42,6 +42,7 @@ class Line < ApplicationRecord
     processor = LineProcessor.new(self.input)
     self.name = processor.name
     self.expression = processor.expression
+    self.mode = processor.mode.to_s
     save_variable
   end
 
