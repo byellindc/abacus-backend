@@ -30,7 +30,7 @@ class Api::V1::LinesController < ApplicationController
   private
 
   def line_params
-    params.permit(:id, :document_id, :input)
+    params.permit(:id, :document_id, :input, :name)
   end
 
   def document
