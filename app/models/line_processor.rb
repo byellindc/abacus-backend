@@ -1,5 +1,6 @@
 class LineProcessor
-  attr_reader :input, :name, :expression, :mode
+  attr_reader :input, :expression, :name, :mode
+  MODES = %s(calculation comment invalid)
 
   def initialize(input)
     @input = input
@@ -14,9 +15,15 @@ class LineProcessor
     process_word_operators
     process_percentage_expression
     process_unit_conversions
+    process_math_functions
+    
     trim_whitespace
     validate
   end
+
+  # def expression
+  #   @expression if 
+  # end
 
   def has_variable?
     return !!@name
@@ -39,24 +46,39 @@ class LineProcessor
   # matches `[PERCENTAGE] of [NUM]`
   # and `[PERCENTAGE] (off|on) [NUM]`
   def process_percentage_expression
-    regex = /(?<percentage>-?[\d.]+)% (?<operator>(off?|on)) (?<num>-?[\d.]+)/
+    regex = /(?<percentage>-?[\d.]+)% (?<operator>(off?|on)) (?<expr>.*$)/
     match = @expression.match(regex)
 
     if match
       operator = match.named_captures["operator"]
       percentage = match.named_captures["percentage"]
-      num = match.named_captures["num"]
+      expr = match.named_captures["expr"]
 
-      percentage_expr = "#{num} * #{percentage.to_f/100}"
+      percentage_expr = "#{expr} * #{percentage.to_f/100}"
 
       case operator
       when 'of'
         @expression = percentage_expr
       when 'off'
-        @expression = "#{num} - (#{percentage_expr})"
+        @expression = "#{expr} - (#{percentage_expr})"
       when 'on'
-        @expression = "#{num} + (#{percentage_expr})"
+        @expression = "#{expr} + (#{percentage_expr})"
       end
+    end
+  end
+    
+  # reformat any mathmatical functions
+  # from lowercase to upper
+  # e.g. avg(1,2) -> AVG(1,2)
+  def process_math_functions
+    funcs = %w(min max sum avg count round rounddown roundup sin cos tan)
+    regex = /\b(?<func>#{funcs}.join('|'))\((?<expr>[^()]+)\)/
+    match = @expression.match(regex)
+
+    if match
+      func = match.named_captures["func"]
+      expr = match.named_captures["expr"]
+      @expression = "#{func.upcase}(#{expr})"
     end
   end
 
@@ -85,7 +107,8 @@ class LineProcessor
   def validate
     if !@expression || @expression.blank?
       return
-    elsif !Calculator.valid?(expression)
+    elsif !Calculator.valid?(@expression)
+      @expression = nil
       @mode = :invalid
     end
   end

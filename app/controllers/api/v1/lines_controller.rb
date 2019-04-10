@@ -14,6 +14,8 @@ class Api::V1::LinesController < ApplicationController
 
   def update
     line.update(line_params)
+    line.reprocess
+
     if line.save
       render json: line, status: :accepted
     else

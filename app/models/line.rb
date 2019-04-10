@@ -1,33 +1,84 @@
 class Line < ApplicationRecord
   belongs_to :document
-  before_save :reprocess
+  before_save :handle_change
 
-  def reprocess
-    if input_changed?
-      process_expression
-      evaluate_result
+  def handle_change
+    # puts "handle_change: #{self}"
+    @dirty ||= true
+    if input_changed? || @dirty
+      # puts "input_changed: #{self}"
+      reprocess
+      @dirty = nil
     end
   end
 
+  def reprocess
+    process_expression
+    evaluate_result
+    save_variable
+  end
+
+  def reprocess!
+    reprocess
+    self.save
+  end
+
   def result
-    result_formatted
+    result_formatted if display_result?
+  end
+
+  def result_raw
+    self.read_attribute(:result) 
   end
 
   def write(text)
     self.update(input: text)
   end
 
-  # def name
-  #   self.read_attribute(:name) || "line#{line_num}"
-  # end
-
   # line's index within document
+  # if index is nil (when line hasn't been saved yet)
+  # assume future index based on document's line length
   def index
-    self.document.lines.index(self)
+    self.document.line_index(self) || self.document.next_line_index
   end
 
   def line_num
     self.index ? self.index + 1 : 0
+  end
+
+  def name
+    self.read_attribute(:name) || default_name
+  end
+
+  # if a line does not have explicit 
+  # variable assignment (`[VAR] = ...`)
+  # the default name is `line[NUM]`
+  def default_name
+    return "line#{line_num}"
+  end
+
+  def is_comment?
+    self.mode.to_sym == :comment
+  end
+
+  def is_invalid?
+    self.mode.to_sym == :invalid
+  end
+
+  def is_calculation?
+    self.result.is_a? Numeric
+  end
+
+  def has_expression?
+    !!self.expression && !self.expression.blank?
+  end
+
+  # if line is a non-calculation
+  # (does not have a processed expression)
+  # such as: 'comment' or 'invalid'
+  # then no result should be displayed
+  def display_result?
+    has_expression?
   end
 
   private
@@ -43,19 +94,28 @@ class Line < ApplicationRecord
     self.name = processor.name
     self.expression = processor.expression
     self.mode = processor.mode.to_s
-    save_variable
-  end
-
-  def save_variable
-    if self.name 
-      self.document.save_variable(self.name, self)
-    end
+    # save_variable
   end
 
   # recast result if it can be expressed as an integer
-  # e.g. 1.0 => 1, 1.1 => 1.1
+  # e.g. 1.0 => 1
   def result_formatted
     result_val = self.read_attribute(:result)
-    result_val == result_val.to_i ? result_val.to_i : result_val.to_f
+    
+    if !result_val
+      return nil
+    elsif !result_val.is_a? Numeric
+      return result_val
+    elsif result_val == result_val.to_i
+      return result_val.to_i
+    else
+      return result_val.to_f
+    end
+  end
+
+  def save_variable
+    # puts "[save] #{self}: #{self.name}"
+    # self.document.save_variable(self.name, self) if display_result?
+    self.document.save_line(self)
   end
 end

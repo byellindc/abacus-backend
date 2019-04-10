@@ -1,8 +1,12 @@
 require 'dentaku'
 
 class Calculator
+  attr_reader :store
+  alias_method :variables, :store
+
   def initialize
     @internal = Dentaku::Calculator.new
+    @store = {}
   end
 
   # if expression evaluates to nil
@@ -12,7 +16,8 @@ class Calculator
   end
 
   def eval(expression)
-    @internal.evaluate(expression)
+    Dentaku(expression, self.store)
+    # @internal.evaluate(expression)
   end
 
   def eval!(expression)
@@ -21,11 +26,9 @@ class Calculator
 
   # store key/value variables pairs
   def save(key, value)
-    @internal.store(key, value)
-  end
-
-  def variables
-    @internal.memory
+    @store[key] = value
+    # puts "[save:#{@internal.object_id}] #{key}: #{value}"
+    # !!@internal.store(key, value)
   end
 
   def variable_names

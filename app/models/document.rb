@@ -1,3 +1,5 @@
+require 'dentaku'
+
 class Document < ApplicationRecord
   belongs_to :user
   has_many :lines, -> { order(created_at: :asc) }, dependent: :destroy
@@ -5,6 +7,18 @@ class Document < ApplicationRecord
 
   DEFAULT_TITLE = 'Untitled'
   after_create :ensure_title
+
+  after_initialize :setup_calc
+  attr_reader :calculator, :store
+
+  def setup_calc
+    @calculator = Calculator.new
+    @store = {}
+  end
+
+  def reprocess
+    !!self.lines.each(&:reprocess)
+  end
 
   def eval(expression_or_line)
     if expression_or_line.is_a? Line
@@ -14,18 +28,35 @@ class Document < ApplicationRecord
     end
 
     calculator.eval(expression)
+    # Dentaku(expression, @store)
   end
 
-  def save_variable(name, line)
-    calculator.save(name, line.result)
+  def save_variable(name, value)
+    # calculator.save(name, value)
+    @store[name] = value
+  end
+
+  def save_line(line)
+    if line.result
+      # puts "[save_line:#{self.object_id}] #{line.name}: #{line.result}"
+      # puts "[calc:#{@calculator.object_id}]"
+      save_variable(line.name, line.result) 
+    end
   end
 
   def variables
-    calculator.variables
+    # calculator.variables  
+    @store
+  end
+
+  # returns only lines that are valid calculations
+  # (lines that have a numeric result)
+  def calculation_lines
+    self.lines.select(&:is_calculation?)
   end
 
   def raw_total
-    lines.inject(0) {|total, l| total + l.result}
+    calculation_lines.inject(0) {|total, l| total + l.result}
   end
 
   # recast total if it can be expressed as an integer
@@ -33,6 +64,19 @@ class Document < ApplicationRecord
   def total
     total_val = raw_total
     total_val == total_val.to_i ? total_val.to_i : total_val.to_f
+  end
+
+  def line_index(line)
+    self.lines.index(line)
+  end
+  
+  def next_line_index
+    self.lines.length
+  end
+
+  # returns unsaved Line instance
+  def new_line(input)
+    Line.new(document: self, input: input)
   end
 
   # if no title is specified, generate incremented default
@@ -62,9 +106,9 @@ class Document < ApplicationRecord
     "#{DEFAULT_TITLE} #{Document.next_default_index}"
   end
 
-  private 
+  # def calculator
+  #   @calculator ||= Calculator.new
+  # end
 
-  def calculator
-    @calculator ||= Calculator.new
-  end
+  # private 
 end

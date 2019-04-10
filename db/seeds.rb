@@ -42,6 +42,16 @@ Line.create!(
 )
 
 Line.create!(
+  input: "// this is a comment",
+  document: doc
+)
+
+Line.create!(
+  input: "8 * huh",
+  document: doc
+)
+
+Line.create!(
   input: "1+1",
   document: doc2
 )
