@@ -76,7 +76,7 @@ class Document < ApplicationRecord
 
   # returns unsaved Line instance
   def new_line(input)
-    Line.new(document: self, input: input)
+    Line.create!(document: self, input: input)
   end
 
   # if no title is specified, generate incremented default
