@@ -1,12 +1,20 @@
 class Line < ApplicationRecord
   belongs_to :document
   before_save :handle_change
+  before_create :ensure_index
 
   def handle_change
     @dirty ||= true
     if input_changed? || @dirty
       reprocess
       @dirty = nil
+    end
+  end
+
+  def ensure_index
+    if self.index.nil?
+      # self.index = calculate_index
+      self.index = self.document.next_line_index
     end
   end
 
@@ -36,7 +44,7 @@ class Line < ApplicationRecord
   # line's index within document
   # if index is nil (when line hasn't been saved yet)
   # assume future index based on document's line length
-  def index
+  def calculate_index
     self.document.line_index(self) || self.document.next_line_index
   end
 

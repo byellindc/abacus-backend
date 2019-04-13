@@ -2,7 +2,7 @@ require 'dentaku'
 
 class Document < ApplicationRecord
   belongs_to :user
-  has_many :lines, -> { order(created_at: :asc) }, dependent: :destroy
+  has_many :lines, -> { order(index: :asc) }, dependent: :destroy
   accepts_nested_attributes_for :lines
 
   DEFAULT_TITLE = 'Untitled'
@@ -50,8 +50,8 @@ class Document < ApplicationRecord
   end
 
   # returns saved Line instance
-  def new_line(input)
-    Line.create!(document: self, input: input)
+  def new_line(input, index = nil)
+    Line.create!(document: self, input: input, index: index)
   end
 
   def setup_calc
