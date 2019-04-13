@@ -105,6 +105,7 @@ class LineProcessor
   # if non-blank expression is invalid
   # then mark mode as :invalid
   def validate
+    # @expression && !@expression.blank?
     if !@expression || @expression.blank?
       return
     elsif !Calculator.valid?(@expression)

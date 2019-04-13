@@ -3,10 +3,8 @@ class Line < ApplicationRecord
   before_save :handle_change
 
   def handle_change
-    # puts "handle_change: #{self}"
     @dirty ||= true
     if input_changed? || @dirty
-      # puts "input_changed: #{self}"
       reprocess
       @dirty = nil
     end
@@ -15,7 +13,7 @@ class Line < ApplicationRecord
   def reprocess
     process_expression
     evaluate_result
-    save_variable
+    # save_variable
   end
 
   def reprocess!
@@ -61,11 +59,16 @@ class Line < ApplicationRecord
     self.mode.to_sym == :comment
   end
 
-  def is_invalid?
-    self.mode.to_sym == :invalid
+  def is_calculation?
+    self.mode.to_sym == :calculation
   end
 
-  def is_calculation?
+  def is_invalid?
+    return true if self.mode.to_sym == :invalid
+    self.is_calculation? && !self.has_result?
+  end
+
+  def has_result?
     self.result.is_a? Numeric
   end
 
@@ -91,7 +94,7 @@ class Line < ApplicationRecord
   # into a pure mathmatical expression
   def process_expression
     processor = LineProcessor.new(self.input)
-    self.name = processor.name
+    self.name = processor.name || default_name
     self.expression = processor.expression
     self.mode = processor.mode.to_s
     # save_variable

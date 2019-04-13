@@ -1,7 +1,7 @@
 require 'dentaku'
 
 class Calculator
-  attr_reader :store
+  attr_reader :store, :internal
   alias_method :variables, :store
 
   def initialize
@@ -16,8 +16,8 @@ class Calculator
   end
 
   def eval(expression)
-    Dentaku(expression, self.store)
-    # @internal.evaluate(expression)
+    # Dentaku(expression, self.store)
+    @internal.evaluate(expression)
   end
 
   def eval!(expression)
