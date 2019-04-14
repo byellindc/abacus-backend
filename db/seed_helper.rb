@@ -5,6 +5,15 @@ def rand_doc_title
   "#{titles.sample} #{rand(1..9)}"
 end
 
+def rand_book_title(max = 18)
+  book = Faker::Base.translate('faker.book.title').reject {|t| t.length > max}.sample
+  return book.gsub(/(^The |^A |\s*\W$)/, '').gsub(/\s+$/, '')
+end
+
+def rand_title
+  (rand(0..5) == 0) ? rand_book_title : rand_doc_title
+end
+
 def rand_name
   Faker::FunnyName.unique.name
 end
@@ -107,6 +116,7 @@ def rand_math_expression(min: 1, max: 500, wrap: false, decimal: nil, nums: [])
   tokens = nums[0..-2].map do |n| 
     [n, rand_operator]
   end.flatten
+
   tokens << nums[-1]
 
   # tokens = [nums[0], rand_operator, nums[1]]
