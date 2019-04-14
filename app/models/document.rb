@@ -11,6 +11,12 @@ class Document < ApplicationRecord
   after_initialize :setup_calc
   # attr_reader :calculator, :store
 
+  def self.create_with_input(input, new_title = nil)
+    doc = Document.create!(user: User.first, title: new_title)
+    Line.create!(document: doc, input: input)
+    return doc
+  end
+
   # returns only lines that are valid calculations
   # (lines that have a numeric result)
   def calculation_lines
@@ -38,7 +44,19 @@ class Document < ApplicationRecord
   # e.g. 1.0 => 1, 1.1 => 1.1
   def total
     total_val = raw_total
-    total_val == total_val.to_i ? total_val.to_i : total_val.to_f
+    (total_val == total_val.to_i) ? total_val.to_i : total_val.to_f
+  end
+
+  def line_inputs
+    self.lines.pluck(:input)
+  end
+
+  def line_results
+    self.calculation_lines.map(&:result)
+  end
+
+  def content
+    line_inputs.join('\n')
   end
 
   def line_index(line)

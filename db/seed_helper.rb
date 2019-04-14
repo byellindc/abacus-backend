@@ -119,16 +119,12 @@ def rand_math_expression(min: 1, max: 500, wrap: false, decimal: nil, nums: [])
 
   tokens << nums[-1]
 
-  # tokens = [nums[0], rand_operator, nums[1]]
-
   expr = tokens.join(' ')
   expr = "(#{expr})" if wrap
   return expr
 end
 
 def rand_math_expressions(nums = [])
-  # nums.shuffle! if nums
-
   expressions = []
   len = rand(1..3)
 

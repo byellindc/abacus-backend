@@ -12,10 +12,7 @@ class Line < ApplicationRecord
   end
 
   def ensure_index
-    if self.index.nil?
-      # self.index = calculate_index
-      self.index = self.document.next_line_index
-    end
+    self.index = self.document.next_line_index if self.index.nil?
   end
 
   def reprocess
