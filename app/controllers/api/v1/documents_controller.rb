@@ -11,10 +11,10 @@ class Api::V1::DocumentsController < ApplicationController
   end
 
   def create
-    document = Document.create!(document_params)
-    document.new_line('// type your calculations here')
-    document.new_line('1+1')
-    document.new_line('')
+    document = Document.create(document_params)
+    document.add_line('// type your calculations here')
+    document.add_line('1 + 1')
+    document.add_blank_line
     render json: document, status: :accepted
   end
   
@@ -36,7 +36,7 @@ class Api::V1::DocumentsController < ApplicationController
   private
 
   def document_params
-    doc_params = params.permit(:id, :title, lines: [:id, :document_id, :input])
+    doc_params = params.permit(:id, :title, lines: [:id, :document_id, :input, :content])
     doc_params[:user] = User.first
     return doc_params
   end
