@@ -6,58 +6,57 @@ DatabaseCleaner.clean
 
 # user seeds 
 
-default_pass = '123'
 users = []
+pass = "123"
 
 admin = User.create!(
   name: "admin",
   username: "admin",
-  password: "123"
+  password: pass
 )
 
-5.times do
-  user = rand_person
+2.times do
+  person = rand_person
   users << User.create!(
-    name: user.name, 
-    username: user.username
-    email: user.email
+    name: person[:name], 
+    username: person[:username],
+    email: person[:email],
+    password: pass
    )
 end
 
 # document seeds
 
-docs = []
-
-docs << Document.create!(
+doc = Document.create!(
   user: admin,
   title: "Untitled"
 )
 
-doc2 << Document.create!(
+doc2 = Document.create!(
   user: admin,
   title: "Untitled 2"
 )
 
-3.times.do 
-  docs << Document.create!(
-    user: users.sample, 
-    title: rand_doc_title
-  )
-end
+Document.create!(user: users.sample, title: rand_doc_title)
+Document.create!(user: users.sample, title: rand_doc_title)
+Document.create!(user: users.sample, title: rand_doc_title)
+
+# 3.times.do 
+#   Document.create!(
+#     user: users.sample, 
+#     title: rand_doc_title
+#   )
+# end
 
 # line seeds
 
-def new_line(input = nil, doc = doc)
-  input = rand_line_input if input.nil?
-  Line.create!(input: "1+1", document: docs[0])
-end
-
 new_line('// basic')
 new_line('1+1')
-new_line('2 + 8')
+new_line('test = 2 + 8')
 new_line('40 * 0.74')
 new_line('8/2')
 new_line('2.2 * 3')
+new_line('1 + test')
 new_line('')
 
 new_line('// percentages')
@@ -68,7 +67,7 @@ new_line('')
 
 new_line('// misc')
 new_line('6 + error')
-5.times {|i| new_line }
+# 5.times {|i| new_line }
 # 5.times {|i| new_line(rand_math_expression) }
 
 # Line.create!(
@@ -96,7 +95,7 @@ new_line('6 + error')
 #   document: doc
 # )
 
-Line.create!(
-  input: "1+1",
-  document: doc2
-)
+# Line.create!(
+#   input: "1+1",
+#   document: doc2
+# )

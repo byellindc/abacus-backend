@@ -1,7 +1,7 @@
 # seed utils
 
 def rand_doc_title
-  titles = %w(Bills Utilities Trip Project Untitled DIY Expenses)
+  titles = %w(Bills Utilities Trip Project DIY Expenses)
   "#{titles.sample} #{rand(1..9)}"
 end
 
@@ -11,11 +11,11 @@ def rand_book_title(max = 18)
 end
 
 def rand_title
-  (rand(0..5) == 0) ? rand_book_title : rand_doc_title
+  (rand(0..3) == 0) ? rand_book_title : rand_doc_title
 end
 
 def rand_name
-  Faker::FunnyName.unique.name
+  Faker::Name.unique.name
 end
 
 def rand_username(name = nil)
@@ -36,11 +36,11 @@ def rand_comment
   when 0
     "// #{Faker::Lorem.characters(rand(5..15))}"
   when 1
-    "// #{Faker::Lorem.sentences(rand(1..2))}"
+    "// #{Faker::Lorem.sentences(1).join('. ')}"
   when 2
     "// #{Faker::Lorem.question}"
   else
-    "// #{Faker::Lorem.words(rand(3..20))}"
+    "// #{Faker::Lorem.words(rand(3..20)).join(' ')}"
   end
 end
 
@@ -183,4 +183,8 @@ def rand_line_input
   else
     rand_calculable
   end
+end
+
+def new_line(input = nil, doc = Document.first)
+  doc.add_line(input || rand_line_input)
 end
