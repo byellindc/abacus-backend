@@ -27,15 +27,14 @@ class LineProcessor
   end
 
   def process
-    process_comments
-    process_variable
-    process_word_operators
-    process_percentage_expression
-    process_unit_conversions
-    process_math_functions
+    detect_comments
+    translate_word_operators
+    parse_percentage_expression
+    reformat_math_functions
+    convert_units
     
     trim_whitespace
-    validate
+    # validate
   end
 
   def apply!
@@ -45,31 +44,15 @@ class LineProcessor
     return @line
   end
 
-  # def expression
-  #   @expression if 
-  # end
-
   def has_variable?
     return !!@name
   end
 
   private
 
-  # if input matches `[VAR] = [EXPRESSION]`
-  # extract variable name and expression
-  def process_variable
-    regex = %r{(?<name>\w+)( = )(?<expression>.*$)}
-    match = @expression.match(regex)
-
-    if match
-      @name = match.named_captures["name"]
-      @expression = match.named_captures["expression"]
-    end
-  end
-
   # matches `[PERCENTAGE] of [NUM]`
   # and `[PERCENTAGE] (off|on) [NUM]`
-  def process_percentage_expression
+  def parse_percentage_expression
     regex = /(?<percentage>-?[\d.]+)% (?<operator>(off?|on)) (?<expr>.*$)/
     match = @expression.match(regex)
 
@@ -94,7 +77,7 @@ class LineProcessor
   # reformat any mathmatical functions
   # from lowercase to upper
   # e.g. avg(1,2) -> AVG(1,2)
-  def process_math_functions
+  def reformat_math_functions
     funcs = %w(min max sum avg count round rounddown roundup sin cos tan)
     regex = /\b(?<func>#{funcs}.join('|'))\((?<expr>[^()]+)\)/
     match = @expression.match(regex)
@@ -106,15 +89,15 @@ class LineProcessor
     end
   end
 
-  def process_word_operators
+  def translate_word_operators
   end
 
-  def process_unit_conversions
+  def convert_units
   end
 
   # comments resemble c-style, single-line statements `//[...]`
   # when commented out, the processed expression will be blank 
-  def process_comments
+  def detect_comments
     if @input =~ %r{^\s*[/]{2}}
       @mode = :comment
       @expression = ''
