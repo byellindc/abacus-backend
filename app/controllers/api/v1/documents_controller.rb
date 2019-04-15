@@ -36,7 +36,7 @@ class Api::V1::DocumentsController < ApplicationController
   private
 
   def document_params
-    doc_params = params.permit(:id, :title, lines: [:id, :document_id, :input, :content])
+    doc_params = params.permit(:id, :title, lines: [:id, :document_id, :input, :contents])
     doc_params[:user] = User.first
     return doc_params
   end

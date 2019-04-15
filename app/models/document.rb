@@ -42,7 +42,7 @@ class Document < ApplicationRecord
   end
 
   def add_line(input)
-    self.content << input
+    self.contents << input
     self.save!
   end
 
@@ -51,7 +51,7 @@ class Document < ApplicationRecord
   end
 
   def add_lines(*inputs)
-    self.content += inputs
+    self.contents += inputs
     self.save!
   end
 
@@ -123,7 +123,7 @@ class Document < ApplicationRecord
   # reset memoized line array
   # reprocess lines
   def handle_change
-    if self.content_changed?
+    if self.contents_changed?
       @_lines = nil 
       process_lines
     end
@@ -159,7 +159,7 @@ class Document < ApplicationRecord
   private 
 
   def generate_lines
-    self.content.map.with_index {|input, i| create_line(input, i)}
+    self.contents.map.with_index {|input, i| create_line(input, i)}
   end
 
   def create_line(input, index)
