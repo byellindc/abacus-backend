@@ -20,8 +20,13 @@ class Document < ApplicationRecord
     @results = {}
   end
 
+  # ensure content being called is always a string
+  def safe_content
+    self.read_attribute(:content) || ""
+  end
+  
   def line_inputs
-    self.content.split('\n')
+    self.safe_content.split('\n')
   end
 
   def line_inputs=(inputs)
@@ -48,8 +53,12 @@ class Document < ApplicationRecord
     self.lines.length
   end
 
-  def add_line_input(input)
+  def add_line(input)
     self.line_inputs = [self.line_inputs, input]
+  end
+
+  def add_blank_line
+    self.add_line('')
   end
 
   # def line_updated(line)
