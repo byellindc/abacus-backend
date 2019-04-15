@@ -30,6 +30,9 @@ class Document < ApplicationRecord
   end
 
   def line_inputs=(inputs)
+    # if our first input is blank remove it from array to
+    # prevent unnecessary newline at start
+    inputs.shift if inputs[0].nil? || inputs[0].blank?
     self.update(content: inputs.join('\n'))
   end
 
@@ -59,6 +62,10 @@ class Document < ApplicationRecord
 
   def add_blank_line
     self.add_line('')
+  end
+
+  def add_lines(*inputs)
+    self.line_inputs = [self.line_inputs, *input]
   end
 
   # def line_updated(line)
