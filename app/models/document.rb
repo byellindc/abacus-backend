@@ -1,3 +1,4 @@
+require 'json'
 require 'dentaku'
 require_relative '../helpers/numeric_helper'
 
@@ -18,22 +19,6 @@ class Document < ApplicationRecord
     @store = {}
     @expressions = {}
     @results = {}
-  end
-
-  # ensure content being called is always a string
-  def safe_content
-    self.read_attribute(:content) || ""
-  end
-  
-  def line_inputs
-    self.safe_content.split('\n')
-  end
-
-  def line_inputs=(inputs)
-    # if our first input is blank remove it from array to
-    # prevent unnecessary newline at start
-    inputs.shift if inputs[0].nil? || inputs[0].blank?
-    self.update(content: inputs.join('\n'))
   end
 
   def lines
@@ -57,7 +42,8 @@ class Document < ApplicationRecord
   end
 
   def add_line(input)
-    self.line_inputs = [self.line_inputs, input]
+    self.content << input
+    self.save!
   end
 
   def add_blank_line
@@ -65,7 +51,8 @@ class Document < ApplicationRecord
   end
 
   def add_lines(*inputs)
-    self.line_inputs = [self.line_inputs, *input]
+    self.content += inputs
+    self.save!
   end
 
   # def line_updated(line)
@@ -172,7 +159,7 @@ class Document < ApplicationRecord
   private 
 
   def generate_lines
-    line_inputs.map.with_index {|input, i| create_line(input, i)}
+    self.content.map.with_index {|input, i| create_line(input, i)}
   end
 
   def create_line(input, index)
