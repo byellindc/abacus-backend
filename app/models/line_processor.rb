@@ -6,7 +6,9 @@ class LineProcessor
     @line = line
     @input = line.input
     @expression = @input
+
     @mode = :calculation
+    @errors = []
     @store = store
 
     process
@@ -29,6 +31,8 @@ class LineProcessor
   def process
     detect_comments
     translate_word_operators
+    standardize_spacing
+    expand_variables
     parse_percentage_expression
     reformat_math_functions
     convert_units
@@ -44,12 +48,30 @@ class LineProcessor
     return @line
   end
 
-  def has_variable?
-    return !!@name
-  end
+  # def has_variable?
+  #   return !!@name
+  # end
 
   private
 
+  def standardize_spacing
+  #   operators = %w(* / + -)
+  #   operator_regex = /[*\/+-]/
+
+  #   @expression.gsub(/([^\s\b])([*\/+-])/, '$1')
+    
+  #   tokens = []
+  #   current = nil
+    
+  #   @expression.split('').each do |c|
+  #     if c =~ /\s/
+  #       tokens << current if current
+  #       current = nil
+  #     elsif 
+  #     if operators.include? c
+  #   end
+  end
+  
   # matches `[PERCENTAGE] of [NUM]`
   # and `[PERCENTAGE] (off|on) [NUM]`
   def parse_percentage_expression
@@ -102,6 +124,40 @@ class LineProcessor
       @mode = :comment
       @expression = ''
     end
+  end
+
+  def valid_var_name?(name)
+    name =~ /^[\w]+$/
+  end
+
+  def get_var(name)
+    @store[name.downcase]
+  end
+
+  def is_var?(name)
+    valid_var_name?(name) && !!get_var(name)
+  end
+
+  def invalid_var?(name)
+    valid_var_name?(name) && !is_var?(name)
+  end
+
+  # currently variables are only expanded when 
+  # surrounded by whitespace or ends of line
+  def expand_variables
+    # var_regex = /^[\w]+$/
+    # var_regex = /([\s\b])[\w]+([\s\b])/
+    @expression = @expression.split(' ').map do |token|
+      if !valid_var_name?(token)
+        return token
+      elsif is_var?(token)
+        return get_var(token)
+      else
+        @mode = :invalid
+        @errors << {message: "invalid variable name", info: token}
+        return token
+      end
+    end.join(' ')
   end
 
   # remove leading and trailing whitespace from expression
