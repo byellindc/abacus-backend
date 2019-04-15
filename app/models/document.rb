@@ -1,4 +1,5 @@
 require 'dentaku'
+require_relative '../helpers/numeric_helper'
 
 class Document < ApplicationRecord
   belongs_to :user
@@ -7,56 +8,36 @@ class Document < ApplicationRecord
 
   DEFAULT_TITLE = 'Untitled'
   after_create :ensure_title
+  after_update :handle_change
 
-  after_initialize :setup_calc
-  # attr_reader :calculator, :store
+  after_initialize :setup
+  attr_reader :calc, :store 
+  attr_reader :expressions, :results
 
-  def self.create_with_input(input, new_title = nil)
-    doc = Document.create!(user: User.first, title: new_title)
-    Line.create!(document: doc, input: input)
-    return doc
-  end
-
-  # returns only lines that are valid calculations
-  # (lines that have a numeric result)
-  def calculation_lines
-    self.lines.select(&:has_result?)
-    # valid_calc_lines = []
-
-    # self.lines.each do |line|
-    #   if line.is_calculation?
-    #     if line.has_result?
-    #       valid_calc_lines << line
-    #     else
-    #       line.update(mode: 'invalid')
-    #     end
-    #   end
-    # end
-
-    # return valid_calc_lines
-  end
-
-  def raw_total
-    calculation_lines.inject(0) {|total, l| total + l.result}
-  end
-
-  # recast total if it can be expressed as an integer
-  # e.g. 1.0 => 1, 1.1 => 1.1
-  def total
-    total_val = raw_total
-    (total_val == total_val.to_i) ? total_val.to_i : total_val.to_f
+  def setup
+    @store = {}
+    @expressions = {}
+    @results = {}
   end
 
   def line_inputs
-    self.lines.pluck(:input)
+    self.content.split('\n')
   end
 
-  def line_results
-    self.calculation_lines.map(&:result)
+  def line_inputs=(inputs)
+    self.update(content: inputs.join('\n'))
   end
 
-  def content
-    line_inputs.join('\n')
+  def lines
+    @_lines ||= generate_lines
+  end
+
+  def total
+    calculation_lines.inject(0) {|total, l| total + l.result}
+  end
+
+  def total_formatted
+    simplify_number(total)
   end
 
   def line_index(line)
@@ -67,79 +48,83 @@ class Document < ApplicationRecord
     self.lines.length
   end
 
-  # returns saved Line instance
-  def new_line(input, index = nil)
-    Line.create!(document: self, input: input, index: index)
+  def add_line_input(input)
+    self.line_inputs = [self.line_inputs, input]
   end
 
-  def setup_calc
-    # @calculator = Calculator.new
-    @calc = Dentaku::Calculator.new
-    # @store = {}
-  end
-
-  def reprocess
-    !!self.lines.each(&:reprocess)
-  end
-
-  def eval(expression_or_line)
-    reload_variables
+  # def line_updated(line)
+  #   calculate_results
     
-    if expression_or_line.is_a? Line
-      expression = line.expression
-    else
-      expression = expression_or_line
-    end
-
-    @calc.evaluate(expression)
-    # calculator.eval(expression)
-    # Dentaku(expression, variables)
-  end
-
-  def save_variable(name, value)
-    # calculator.save(name, value)
-    # @store[name] = value
-  end
-
-  def save_line(line)
-    if line.result
-      # puts "[save_line:#{self.object_id}] #{line.name}: #{line.result}"
-      # puts "[calc:#{@calculator.object_id}]"
-      save_variable(line.name, line.result) 
-    end
-  end
-
-  def variables
-    # calculator.variables  
-    # @store
-
-    vars = {}
-    self.calculation_lines.each do |line|
-      vars[line.name] = line.expression
-    end
-
-    return vars
-  end
-
-  def reload_variables
-    # calculator.store(variables)
-    @calc.store(variables)
-  end
-
-  # # if non-blank expression is invalid
-  # # then mark mode as :invalid
-  # def valid_line?(line)
-  #   if !line.expression || line.expression.blank?
-  #     return
-  #   elsif !Calculator.valid?(@expression)
-  #     @expression = nil
-  #     @mode = :invalid
+  #   if line.name && line.result
+  #     @results[line.name] = line.result
   #   end
   # end
 
-  # def store
-  #   calculator.store
-  # end
+  def process_lines
+    process_variable_assignments
+    process_line_syntax
+    process_result_calculations
+  end
+
+  def process_variable_assignments
+    @store = {}
+    @expressions = {}
+    
+    processor = VariableProcessor.new(self.lines)
+    processor.store.each do |var, line|
+      @store[var] = line
+      @expressions[var] = line.expression
+    end
+  end
+
+  def process_line_syntax
+    self.lines.each do |line|
+      LineProcessor.process!(line, self.expressions)
+    end
+  end
+
+  def process_result_calculations
+    self.lines.each do |line| 
+      @results[line.name] = calculate_line!(line)
+    end
+  end
+
+  def calculate_line!(line)
+    result = eval_line(line)
+    line.result = result
+    return result
+  end
+
+  def eval_line(line)
+    eval(line.expression) if line.is_calculation?
+  end
+
+  def eval(expression)
+    calculator.evaluate(expression)
+    # calculator.eval(expression)
+  end
+
+  def variable_names
+    self.store.keys
+  end
+
+  def result(name)
+    self.results[name.to_s]
+  end
+
+  def expression(name)
+    self.expressions[name.to_s]
+  end
+
+  # if content has been updated
+  # reset memoized line array
+  # reprocess lines
+  def handle_change
+    if self.content_changed?
+      @_lines = nil 
+      process_lines
+    end
+  end
 
   # if no title is specified, generate incremented default
   def ensure_title
@@ -170,7 +155,24 @@ class Document < ApplicationRecord
 
   private 
 
+  def generate_lines
+    line_inputs.map.with_index {|input, i| create_line(input, i)}
+  end
+
+  def create_line(input, index)
+    Line.new(document: self, index: index, input: input)
+  end
+
+  def calculation_lines
+    self.lines.select {|l| l.is_calculation? }
+  end
+
+  def stored_lines
+    self.store.values
+  end
+
   def calculator
-    @calculator ||= Calculator.new
+    # @calculator ||= Calculator.new
+    @calc ||= Dentaku::Calculator.new
   end
 end

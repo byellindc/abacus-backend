@@ -2,11 +2,28 @@ class LineProcessor
   attr_reader :input, :expression, :name, :mode
   MODES = %s(calculation comment invalid)
 
-  def initialize(input)
-    @input = input
-    @expression = input
+  def initialize(line, store = {})
+    @line = line
+    @input = line.input
+    @expression = @input
     @mode = :calculation
+    @store = store
+
     process
+  end
+
+  def self.process!(line, store = nil)
+    processor = LineProcessor.new(line, store)
+    processor.apply!
+  end
+
+  def attributes
+    {
+      name: self.name,
+      input: self.input,
+      expression: self.expression,
+      mode: self.mode
+    }
   end
 
   def process
@@ -19,6 +36,13 @@ class LineProcessor
     
     trim_whitespace
     validate
+  end
+
+  def apply!
+    @line.expression = self.expression
+    @line.name = self.name
+    @line.mode = self.mode
+    return @line
   end
 
   # def expression
