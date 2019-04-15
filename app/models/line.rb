@@ -65,6 +65,10 @@ class Line
     @name || default_name
   end
 
+  def name=(name)
+    @name = name.downcase
+  end
+
   # if a line does not have explicit 
   # variable assignment (`[VAR] = ...`)
   # the default name is `line[NUM]`
