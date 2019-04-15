@@ -42,6 +42,7 @@ class Document < ApplicationRecord
   end
 
   def add_line(input)
+    self.contents_will_change!
     self.contents << input
     self.save!
   end
