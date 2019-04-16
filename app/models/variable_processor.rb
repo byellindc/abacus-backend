@@ -4,7 +4,11 @@ class VariableProcessor
   def initialize(lines = [])
     @store = {}
     @lines = lines
+    
     process_lines
+    @store.each do |var, value| 
+      yield(var, value)
+    end
   end
   
   def add_line(line)

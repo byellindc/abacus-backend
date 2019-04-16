@@ -51,7 +51,6 @@ class Line
   end
 
   def is_invalid?
-    return true if self.mode.to_sym == :invalid
     self.is_calculation? && !self.has_result?
   end
 
@@ -66,10 +65,6 @@ class Line
   def name
     @name || default_name
   end
-
-  # def name=(name)
-  #   @name = name.downcase
-  # end
 
   # if a line does not have explicit 
   # variable assignment (`[VAR] = ...`)

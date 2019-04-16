@@ -8,15 +8,13 @@ class Document < ApplicationRecord
   DEFAULT_TITLE = 'Untitled'
   after_create :ensure_title
   after_update :handle_change
-
   after_initialize :setup
-  attr_reader :calc, :store 
+
+  # attr_reader :calc
   attr_reader :expressions, :results
 
   def setup
-    @store = {}
-    @expressions = {}
-    @results = {}
+    self.reset
   end
 
   # content is a newline-separted 
@@ -26,9 +24,7 @@ class Document < ApplicationRecord
   end
 
   def content=(newContent)
-    self.contents_will_change!
-    self.contents = newContent.split('\n')
-    self.save!
+    self.updateContents(newContent.split('\n'))
   end
 
   def update_contents(newContents)
@@ -37,7 +33,7 @@ class Document < ApplicationRecord
   end
 
   def lines
-    @_lines ||= generate_lines
+    @lines ||= generate_lines
   end
 
   def line_index(line)
@@ -63,47 +59,58 @@ class Document < ApplicationRecord
     self.save!
   end
 
-  # def line_updated(line)
-  #   calculate_results
+  # def process_lines
+  #   @lines = nil 
+  #   process_variable_assignments
+  #   # process_line_syntax
+  #   process_result_calculations
+  # end
+
+  def reset
+    @lines = nil 
+    @store = {}
+    @expressions = {}
+    @results = {}
+  end
+
+  def process
+    self.reset
+
+    VariableProcessor.new(self.lines) do |var, line|
+      @store[var] = line
+      @expressions[var] = line.expression
+
+      self.calculate_line!(line)
+      @results[var] = line.result if line.result
+      calculator.store(var, line.result)
+    end
+
+    return @store
     
-  #   if line.name && line.result
-  #     @results[line.name] = line.result
+    # processor = VariableProcessor.new(self.lines)
+    # processor.store.each do |var, line|
+    #   @store[var] = line
+    #   @expressions[var] = line.expression
+    # end
+  end
+
+  # def process_line_syntax
+  #   self.lines.each do |line|
+  #     LineProcessor.process!(line, self.expressions)
   #   end
   # end
 
-  def process_lines
-    @_lines = nil 
-    process_variable_assignments
-    process_line_syntax
-    process_result_calculations
-  end
-
-  def process_variable_assignments
-    @store = {}
-    @expressions = {}
-    
-    processor = VariableProcessor.new(self.lines)
-    processor.store.each do |var, line|
-      @store[var] = line
-      @expressions[var] = line.expression
-    end
-  end
-
-  def process_line_syntax
-    self.lines.each do |line|
-      LineProcessor.process!(line, self.expressions)
-    end
-  end
-
-  def process_result_calculations
-    self.lines.each do |line| 
-      @results[line.name] = calculate_line!(line)
-    end
-  end
+  # def process_result_calculations
+  #   self.lines.each do |line| 
+  #     @results[line.name] = calculate_line!(line)
+  #   end
+  # end
 
   def calculate_line!(line)
+    LineProcessor.process!(line, self.expressions)
     result = eval_line(line)
     line.result = result
+    line.mode = :invalid if line.is_invalid?
     return result
   end
 
@@ -113,7 +120,15 @@ class Document < ApplicationRecord
 
   def eval(expression)
     calculator.evaluate(expression)
-    # calculator.eval(expression)
+  end
+
+  def store
+    @store = self.process if @store.nil? || @store.empty?
+    return @store
+  end
+
+  def variables
+    self.store.select { |name, line| line.result }
   end
 
   def variable_names
@@ -129,12 +144,9 @@ class Document < ApplicationRecord
   end
 
   # if content has been updated
-  # reset memoized line array
   # reprocess lines
   def handle_change
-    if self.contents_changed?
-      process_lines
-    end
+    process if self.contents_changed?
   end
 
   # if no title is specified, generate incremented default
@@ -186,7 +198,6 @@ class Document < ApplicationRecord
   end
 
   def calculator
-    # @calculator ||= Calculator.new
     @calc ||= Dentaku::Calculator.new
   end
 end

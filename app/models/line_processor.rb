@@ -31,12 +31,18 @@ class LineProcessor
   def process
     detect_blank
     detect_comments
+
     translate_word_operators
+    translate_word_amounts
+
     standardize_spacing
+
     process_variable_assignment
-    expand_variables
+    # expand_variables
+
     parse_percentage_expression
     reformat_math_functions
+
     convert_units
     
     trim_whitespace
@@ -54,11 +60,23 @@ class LineProcessor
   #   return !!@name
   # end
 
+  def tokens
+    @expression.split(' ')
+  end
+
+  def tokens=(tokens)
+    @expression = tokens.join(' ')
+  end
+
+  def map_tokens
+    self.tokens.map { |token| yield(token) }
+  end
+
   private
 
   def standardize_spacing
-  #   operators = %w(* / + -)
-  #   operator_regex = /[*\/+-]/
+    operators = %w(* / + -)
+    operator_regex = /[*\/+-]/
 
   #   @expression.gsub(/([^\s\b])([*\/+-])/, '$1')
     
@@ -114,6 +132,25 @@ class LineProcessor
   end
 
   def translate_word_operators
+    # word_operators = {
+    #   # "(?<amount>(an? |one )?(half|third|quarter) (of|off|on)": "50% of"
+    # }
+  end
+
+  def translate_word_amounts
+    amounts = {
+      "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, 
+      "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, 
+      "quarter": "25%", "half": "50%"
+    }
+    
+    self.tokens = self.map_tokens do |token|
+      amounts[token] || token
+    end
+
+    # @expression = @expression.split(' ').map do |token|
+    #   amounts[token] || token
+    # end
   end
 
   def convert_units
@@ -166,19 +203,22 @@ class LineProcessor
   # currently variables are only expanded when 
   # surrounded by whitespace or ends of line
   def expand_variables
+    # self.tokens = self
+
     # var_regex = /^[\w]+$/
     # var_regex = /([\s\b])[\w]+([\s\b])/
-    @expression = @expression.split(' ').map do |token|
-      if !valid_var_name?(token)
-        return token
-      elsif is_var?(token)
-        return get_var(token)
-      else
-        @mode = :invalid
-        @errors << {message: "invalid variable name", info: token}
-        return token
-      end
-    end.join(' ')
+
+    # @expression = @expression.split(' ').map do |token|
+    #   if !valid_var_name?(token)
+    #     return token
+    #   elsif is_var?(token)
+    #     return get_var(token)
+    #   else
+    #     @mode = :invalid
+    #     @errors << {message: "invalid variable name", info: token}
+    #     return token
+    #   end
+    # end.join(' ')
   end
 
   # remove leading and trailing whitespace from expression
