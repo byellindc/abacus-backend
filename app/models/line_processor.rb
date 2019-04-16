@@ -1,6 +1,6 @@
 class LineProcessor
   attr_reader :input, :expression, :name, :mode
-  MODES = %s(calculation comment invalid)
+  MODES = %s(calculation comment invalid blank)
 
   def initialize(line, store = {})
     @line = line
@@ -14,7 +14,7 @@ class LineProcessor
     process
   end
 
-  def self.process!(line, store = nil)
+  def self.process!(line, store = {})
     processor = LineProcessor.new(line, store)
     processor.apply!
   end
@@ -29,9 +29,11 @@ class LineProcessor
   end
 
   def process
+    detect_blank
     detect_comments
     translate_word_operators
     standardize_spacing
+    process_variable_assignment
     expand_variables
     parse_percentage_expression
     reformat_math_functions
@@ -117,12 +119,31 @@ class LineProcessor
   def convert_units
   end
 
+  def detect_blank
+    if @input.blank?
+      @mode = :blank
+      @expression = ''
+    end
+  end
+
   # comments resemble c-style, single-line statements `//[...]`
   # when commented out, the processed expression will be blank 
   def detect_comments
     if @input =~ %r{^\s*[/]{2}}
       @mode = :comment
       @expression = ''
+    end
+  end
+
+  # if input matches `[VAR] = [EXPRESSION]`
+  # extract variable name and expression
+  def process_variable_assignment
+    regex = %r{(?<name>\w+)( = )(?<expression>.*$)}
+    match = @input.match(regex)
+
+    if match
+      @name = match.named_captures["name"]
+      @expression = match.named_captures["expression"]
     end
   end
 

@@ -4,8 +4,6 @@ require_relative '../helpers/numeric_helper'
 
 class Document < ApplicationRecord
   belongs_to :user
-  has_many :lines, -> { order(index: :asc) }, dependent: :destroy
-  accepts_nested_attributes_for :lines
 
   DEFAULT_TITLE = 'Untitled'
   after_create :ensure_title
@@ -21,16 +19,20 @@ class Document < ApplicationRecord
     @results = {}
   end
 
+  # content is a newline-separted 
+  # string of contents array
+  def content
+    self.contents.join('\n')
+  end
+
+  def content=(newContent)
+    self.contents_will_change!
+    self.contents = newContent.split('\n')
+    self.save!
+  end
+
   def lines
     @_lines ||= generate_lines
-  end
-
-  def total
-    calculation_lines.inject(0) {|total, l| total + l.result}
-  end
-
-  def total_formatted
-    simplify_number(total)
   end
 
   def line_index(line)
@@ -65,6 +67,7 @@ class Document < ApplicationRecord
   # end
 
   def process_lines
+    @_lines = nil 
     process_variable_assignments
     process_line_syntax
     process_result_calculations
@@ -125,7 +128,6 @@ class Document < ApplicationRecord
   # reprocess lines
   def handle_change
     if self.contents_changed?
-      @_lines = nil 
       process_lines
     end
   end
@@ -164,7 +166,10 @@ class Document < ApplicationRecord
   end
 
   def create_line(input, index)
-    Line.new(document: self, index: index, input: input)
+    line = Line.new(document: self, index: index, input: input)
+    LineProcessor.process!(line)
+    calculate_line!(line)
+    return line
   end
 
   def calculation_lines

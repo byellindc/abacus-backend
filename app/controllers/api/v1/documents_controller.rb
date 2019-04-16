@@ -15,11 +15,13 @@ class Api::V1::DocumentsController < ApplicationController
     document.add_line('// type your calculations here')
     document.add_line('1 + 1')
     document.add_blank_line
+
     render json: document, status: :accepted
   end
   
   def update
     @document.update(document_params)
+
     if @document.save
       render json: @document, status: :accepted
     else
@@ -36,7 +38,8 @@ class Api::V1::DocumentsController < ApplicationController
   private
 
   def document_params
-    doc_params = params.permit(:id, :title, lines: [:id, :document_id, :input, :contents])
+    doc_params = params.permit(:id, :title, :content, :contents,
+      lines: [:id, :document_id, :input])
     doc_params[:user] = User.first
     return doc_params
   end

@@ -1,4 +1,4 @@
-class NumericHelper
+module NumericHelper
   def simplify_number(num)
     if !num.is_a? Numeric
       return num
