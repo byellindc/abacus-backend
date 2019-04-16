@@ -21,6 +21,7 @@ class Api::V1::DocumentsController < ApplicationController
   
   def update
     @document.update(document_params)
+    @document.update_contents(params[:contents]) if params[:contents]
 
     if @document.save
       render json: @document, status: :accepted
@@ -38,10 +39,7 @@ class Api::V1::DocumentsController < ApplicationController
   private
 
   def document_params
-    doc_params = params.permit(:id, :title, :content, :contents,
-      lines: [:id, :document_id, :input])
-    doc_params[:user] = User.first
-    return doc_params
+    params.require(:document).permit(:title, :contents, lines: [:document_id, :input])
   end
 
   def get_document

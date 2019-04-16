@@ -3,7 +3,7 @@ require 'dentaku'
 require_relative '../helpers/numeric_helper'
 
 class Document < ApplicationRecord
-  belongs_to :user
+  # belongs_to :user
 
   DEFAULT_TITLE = 'Untitled'
   after_create :ensure_title
@@ -29,6 +29,11 @@ class Document < ApplicationRecord
     self.contents_will_change!
     self.contents = newContent.split('\n')
     self.save!
+  end
+
+  def update_contents(newContents)
+    self.contents_will_change!
+    self.contents = newContents
   end
 
   def lines
