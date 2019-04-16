@@ -11,7 +11,7 @@ def rand_book_title(max = 18)
 end
 
 def rand_title
-  (rand(0..3) == 0) ? rand_book_title : rand_doc_title
+  (rand(0..2) == 0) ? rand_book_title : rand_doc_title
 end
 
 def rand_name

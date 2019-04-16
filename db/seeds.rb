@@ -28,18 +28,16 @@ end
 # document seeds
 
 doc = Document.create!(
-  user: admin,
   title: "Untitled"
 )
 
 doc2 = Document.create!(
-  user: admin,
   title: "Untitled 2"
 )
 
-Document.create!(user: users.sample, title: rand_doc_title)
-Document.create!(user: users.sample, title: rand_doc_title)
-Document.create!(user: users.sample, title: rand_doc_title)
+Document.create!(title: rand_title)
+Document.create!(title: rand_title)
+Document.create!(title: rand_title)
 
 # 3.times.do 
 #   Document.create!(
