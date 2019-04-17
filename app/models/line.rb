@@ -44,7 +44,9 @@ class Line
   def result_formatted
     formatted = simplify_number(self.result)
 
-    if self.prefix
+    if !formatted.is_a? Numeric
+      return nil
+    elsif self.prefix
       formatted = '%.2f' % self.result
       return "#{prefix}#{formatted}"
     elsif self.out_unit
