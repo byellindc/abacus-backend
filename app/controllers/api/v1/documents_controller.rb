@@ -3,7 +3,7 @@ class Api::V1::DocumentsController < ApplicationController
   
   def index
     documents = Document.all.order(:created_at)
-    render json: documents, status: :accepted
+    render json: documents, status: :accepted, each_serializer: DocumentListSerializer
   end
   
   def show
