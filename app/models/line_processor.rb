@@ -1,6 +1,11 @@
+require 'ruby-units'
+require 'dentaku'
+
 class LineProcessor
-  attr_reader :input, :expression, :name, :mode
-  MODES = %s(calculation comment invalid blank)
+  attr_reader :name, :mode
+  attr_reader :in_unit, :out_unit
+  attr_reader :input, :expression, :result
+  MODES = %s(calculation conversion comment invalid blank)
 
   def initialize(line, store = {})
     @line = line
@@ -31,18 +36,20 @@ class LineProcessor
   def process
     detect_blank
     detect_comments
-
+    
     translate_word_operators
     translate_word_amounts
-
+    
     standardize_spacing
-
+    
+    # process_units
     process_variable_assignment
     # expand_variables
 
     parse_percentage_expression
     reformat_math_functions
 
+    parse_conversions
     convert_units
     
     trim_whitespace
@@ -51,8 +58,14 @@ class LineProcessor
 
   def apply!
     @line.expression = self.expression
+    @line.result = self.result if self.result
+
     @line.name = self.name
     @line.mode = self.mode
+
+    @line.in_unit = self.in_unit
+    @line.out_unit = self.out_unit
+
     return @line
   end
 
@@ -70,6 +83,10 @@ class LineProcessor
 
   def map_tokens
     self.tokens.map { |token| yield(token) }
+  end
+
+  def match(regex)
+    @expression.match(regex)
   end
 
   private
@@ -122,9 +139,9 @@ class LineProcessor
   def reformat_math_functions
     funcs = %w(min max sum avg count round rounddown roundup sin cos tan)
     regex = /\b(?<func>#{funcs}.join('|'))\((?<expr>[^()]+)\)/
-    match = @expression.match(regex)
+    # match = @expression.match(regex)
 
-    if match
+    if self.match(regex)
       func = match.named_captures["func"]
       expr = match.named_captures["expr"]
       @expression = "#{func.upcase}(#{expr})"
@@ -151,6 +168,38 @@ class LineProcessor
     # @expression = @expression.split(' ').map do |token|
     #   amounts[token] || token
     # end
+  end
+
+  def parse_conversions
+    # regex = /(?<operator>\s+as|\s+to|\s+in|\s*>|\s*:)\s+(?<to>.*)/
+    regex = /(\s+as|\s+to|\s+in|\s*>|\s*:)\s+/
+    parts = @expression.split(regex)
+  
+    # puts "parts"
+    # puts parts
+
+    if parts.length >= 3
+      @mode = :conversion
+
+      in_expr = parts[0]
+      out_expr = parts[2]
+
+      begin
+        in_parsed = Unit.parse_into_numbers_and_units(in_expr)
+        out_parsed = Unit.parse_into_numbers_and_units(out_expr)
+
+        @in_unit = in_parsed[1]
+        @out_unit = out_parsed[1]
+        @expression = in_parsed[0].to_s
+
+        conversion = Unit.new(in_expr).convert_to(@out_unit)
+        @result = Unit.parse_into_numbers_and_units(conversion.to_s)[0]
+      rescue ArgumentError => err
+      end
+    end
+  end
+
+  def process_units
   end
 
   def convert_units

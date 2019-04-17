@@ -1,5 +1,6 @@
 require 'json'
 require 'dentaku'
+require 'ruby-units'
 require_relative '../helpers/numeric_helper'
 
 class Document < ApplicationRecord
@@ -81,7 +82,7 @@ class Document < ApplicationRecord
       @expressions[var] = line.expression
 
       self.calculate_line!(line)
-      @results[var] = line.result if line.result
+      @results[var] = line.result_formatted if line.result
       calculator.store(var, line.result)
     end
 
@@ -108,19 +109,35 @@ class Document < ApplicationRecord
 
   def calculate_line!(line)
     LineProcessor.process!(line, self.expressions)
-    result = eval_line(line)
-    line.result = result
-    line.mode = :invalid if line.is_invalid?
+
+    if !line.result
+      result = eval_line(line)
+      line.result = result
+    end
+
+    if line.is_invalid?
+      line.mode = :invalid 
+    end
+
     return result
   end
 
   def eval_line(line)
-    eval(line.expression) if line.is_calculation?
+    eval(line.expression) 
   end
 
   def eval(expression)
     calculator.evaluate(expression)
   end
+
+  # def convert_line(line)
+  #   self.convert(line.expression, line.in_unit, line.out_unit)
+  # end
+
+  # def convert(num:, from:, to:)
+  #   conversion = Unit.new("#{num} #{from}").convert_to(to)
+  #   Unit.parse_into_numbers_and_units(conversion.to_s)[0]
+  # end
 
   def store
     @store = self.process if @store.nil? || @store.empty?

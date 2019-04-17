@@ -2,21 +2,21 @@ require_relative '../helpers/numeric_helper'
 
 class Line
   attr_reader :document_id, :index
+  attr_accessor :input, :expression
   attr_accessor :result, :name, :mode
-  attr_accessor :input, :expression, :name
+  attr_accessor :in_unit, :out_unit
   alias :read_attribute_for_serialization :send
 
   MODES = %i(calculation comment invalid) 
 
-  def initialize(document:, input: nil, index: nil)
-    @document_id = document.id
+  def initialize(document: nil, input: nil, index: nil)
+    @document_id = document.id if document
     @input = input
     @index = index
-    process
+    # process
   end
-
+  
   def to_json
-    puts "to_json: #{self}"
     {
       document_id: self.document_id,
       input: self.input,
@@ -24,7 +24,9 @@ class Line
       mode: self.mode,
       name: self.name,
       result: self.result,
-      result_formatted: self.result_formatted
+      result_formatted: self.result_formatted,
+      in_unit: self.in_unit,
+      out_unit: self.out_unit,
     }
   end
 
@@ -34,8 +36,26 @@ class Line
     self
   end
 
+  # simplifies result value
+  # and appends/prepends unit to expression
+  # if out_unit is present
   def result_formatted
-    simplify_number(result)
+    formatted = simplify_number(result)
+    if self.out_unit
+      return "#{formatted} #{out_unit}"
+    else
+      return formatted
+    end
+  end
+
+  # appends/prepends unit to expression
+  # if in_unit is present
+  def expression_formatted
+    if self.in_unit
+      return "#{self.expression} #{self.in_unit}"
+    else
+      return self.expression
+    end
   end
 
   def line_num
@@ -50,8 +70,12 @@ class Line
     self.mode.to_sym == :calculation
   end
 
+  def is_conversion?
+    self.mode.to_sym == :conversion
+  end
+
   def is_invalid?
-    self.is_calculation? && !self.has_result?
+    (self.is_calculation? || self.is_conversion?) && !self.has_result?
   end
 
   def has_result?
@@ -77,9 +101,15 @@ class Line
 
   def process
     processor = LineProcessor.new(self)
+
     @name = processor.name
     @expression = processor.expression
+    
+    @in_unit = processor.in_unit
+    @out_unit = processor.out_unit
+    
     @mode = processor.mode
+    @result = processor.result if processor.result
   end
 
   def simplify_number(num)
