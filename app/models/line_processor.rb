@@ -2,8 +2,8 @@ require 'ruby-units'
 require 'dentaku'
 
 class LineProcessor
-  attr_reader :name, :mode
-  attr_reader :in_unit, :out_unit
+  attr_reader :name, :mode, :errors
+  attr_reader :in_unit, :out_unit, :prefix
   attr_reader :input, :expression, :result
   MODES = %s(calculation conversion comment invalid blank)
 
@@ -42,7 +42,7 @@ class LineProcessor
     
     standardize_spacing
     
-    # process_units
+    process_prefixes
     process_variable_assignment
     # expand_variables
 
@@ -65,7 +65,9 @@ class LineProcessor
 
     @line.in_unit = self.in_unit
     @line.out_unit = self.out_unit
+    @line.prefix = self.prefix
 
+    @line.errors << self.errors if self.errors
     return @line
   end
 
@@ -86,7 +88,8 @@ class LineProcessor
   end
 
   def match(regex)
-    @expression.match(regex)
+    match = @expression.match(regex)
+    yield(match) if match
   end
 
   private
@@ -139,9 +142,9 @@ class LineProcessor
   def reformat_math_functions
     funcs = %w(min max sum avg count round rounddown roundup sin cos tan)
     regex = /\b(?<func>#{funcs}.join('|'))\((?<expr>[^()]+)\)/
-    # match = @expression.match(regex)
+    match = @expression.match(regex)
 
-    if self.match(regex)
+    if match
       func = match.named_captures["func"]
       expr = match.named_captures["expr"]
       @expression = "#{func.upcase}(#{expr})"
@@ -179,27 +182,55 @@ class LineProcessor
     # puts parts
 
     if parts.length >= 3
-      @mode = :conversion
-
       in_expr = parts[0]
       out_expr = parts[2]
 
       begin
         in_parsed = Unit.parse_into_numbers_and_units(in_expr)
         out_parsed = Unit.parse_into_numbers_and_units(out_expr)
+        
+        in_unit = Unit.new(in_expr)
+        out_unit = Unit.new(out_expr)
+        
+        if in_unit.compatible?(out_unit)
+          @mode = :conversion
 
-        @in_unit = in_parsed[1]
-        @out_unit = out_parsed[1]
-        @expression = in_parsed[0].to_s
-
-        conversion = Unit.new(in_expr).convert_to(@out_unit)
-        @result = Unit.parse_into_numbers_and_units(conversion.to_s)[0]
+          @in_unit = in_parsed[1]
+          @out_unit = out_parsed[1]
+          @expression = in_parsed[0].to_s
+          
+          conversion = in_unit.convert_to(@out_unit)
+          @result = Unit.parse_into_numbers_and_units(conversion.to_s)[0]
+        else
+          @mode = :invalid
+          @errors << {
+            message: "incompatible unit conversion", 
+            info: {in_unit: @in_unit, out_unit: @out_unit}
+          }
+        end
       rescue ArgumentError => err
+        @mode = :invalid
+        @errors << {message: "error converting units", error: err}
       end
     end
   end
 
-  def process_units
+  def process_prefixes
+    regex = /^(?<prefix>\p{S})(?<num>\p{N}+)$/
+
+    new_tokens = []
+    self.tokens.each do |token|
+      match = token.match(regex)
+
+      if match
+        @prefix = match.named_captures["prefix"]
+        new_tokens << match.named_captures["num"]
+      else
+        new_tokens << token
+      end
+    end
+
+    @expression = new_tokens.join(' ')
   end
 
   def convert_units
@@ -237,16 +268,21 @@ class LineProcessor
     name =~ /^[\w]+$/
   end
 
-  def get_var(name)
+  def expand_var(name)
     @store[name.downcase]
   end
 
+  def expand_token(token)
+    var = expand_var(token)
+    var.nil? ? token : "(#{var})"
+  end
+
   def is_var?(name)
-    valid_var_name?(name) && !!get_var(name)
+    valid_var_name?(name) && !!expand_var(name)
   end
 
   def invalid_var?(name)
-    valid_var_name?(name) && !is_var?(name)
+    valid_var_name?(name) && !expand_var?(name)
   end
 
   # currently variables are only expanded when 
@@ -256,6 +292,16 @@ class LineProcessor
 
     # var_regex = /^[\w]+$/
     # var_regex = /([\s\b])[\w]+([\s\b])/
+
+    # expanded = []
+    # self.tokens.each do |token|
+    #   expanded << expand_token(token)
+    # end
+    # @expression = expanded.join(' ')
+
+    @expression = self.tokens.map do |token|
+      expand_token(token)
+    end.join(' ')
 
     # @expression = @expression.split(' ').map do |token|
     #   if !valid_var_name?(token)

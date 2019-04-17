@@ -3,8 +3,8 @@ require_relative '../helpers/numeric_helper'
 class Line
   attr_reader :document_id, :index
   attr_accessor :input, :expression
-  attr_accessor :result, :name, :mode
-  attr_accessor :in_unit, :out_unit
+  attr_accessor :result, :name, :mode, :errors
+  attr_accessor :in_unit, :out_unit, :prefix
   alias :read_attribute_for_serialization :send
 
   MODES = %i(calculation comment invalid) 
@@ -13,6 +13,7 @@ class Line
     @document_id = document.id if document
     @input = input
     @index = index
+    @errors = []
     # process
   end
   
@@ -27,6 +28,7 @@ class Line
       result_formatted: self.result_formatted,
       in_unit: self.in_unit,
       out_unit: self.out_unit,
+      prefix: self.prefix,
     }
   end
 
@@ -40,8 +42,12 @@ class Line
   # and appends/prepends unit to expression
   # if out_unit is present
   def result_formatted
-    formatted = simplify_number(result)
-    if self.out_unit
+    formatted = simplify_number(self.result)
+
+    if self.prefix
+      formatted = '%.2f' % self.result
+      return "#{prefix}#{formatted}"
+    elsif self.out_unit
       return "#{formatted} #{out_unit}"
     else
       return formatted
@@ -97,8 +103,6 @@ class Line
     return "line#{line_num}"
   end
 
-  private
-
   def process
     processor = LineProcessor.new(self)
 
@@ -107,10 +111,15 @@ class Line
     
     @in_unit = processor.in_unit
     @out_unit = processor.out_unit
+    @prefix = processor.prefix
     
     @mode = processor.mode
     @result = processor.result if processor.result
+
+    return self
   end
+
+  private
 
   def simplify_number(num)
     if !num.is_a? Numeric

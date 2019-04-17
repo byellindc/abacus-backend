@@ -53,7 +53,7 @@ new_line('1+1')
 new_line('test = 2 + 8')
 new_line('40 * 0.74')
 new_line('8/2')
-new_line('2.2 * 3')
+new_line('2.2 * $3')
 new_line('1 + test')
 new_line('')
 

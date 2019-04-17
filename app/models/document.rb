@@ -87,12 +87,6 @@ class Document < ApplicationRecord
     end
 
     return @store
-    
-    # processor = VariableProcessor.new(self.lines)
-    # processor.store.each do |var, line|
-    #   @store[var] = line
-    #   @expressions[var] = line.expression
-    # end
   end
 
   # def process_line_syntax
@@ -130,15 +124,6 @@ class Document < ApplicationRecord
     calculator.evaluate(expression)
   end
 
-  # def convert_line(line)
-  #   self.convert(line.expression, line.in_unit, line.out_unit)
-  # end
-
-  # def convert(num:, from:, to:)
-  #   conversion = Unit.new("#{num} #{from}").convert_to(to)
-  #   Unit.parse_into_numbers_and_units(conversion.to_s)[0]
-  # end
-
   def store
     @store = self.process if @store.nil? || @store.empty?
     return @store
@@ -151,6 +136,16 @@ class Document < ApplicationRecord
   def variable_names
     self.store.keys
   end
+
+  # def expressions
+  #   process if !@expressions || @expressions.empty?
+  #   @expressions || {}
+  # end
+
+  # def results
+  #   process if !@results || @results.empty?
+  #   @results || {}
+  # end
 
   def result(name)
     self.results[name.to_s]
