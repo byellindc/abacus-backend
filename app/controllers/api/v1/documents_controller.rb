@@ -11,12 +11,16 @@ class Api::V1::DocumentsController < ApplicationController
   end
 
   def create
-    document = Document.create(document_params)
-    document.add_line('// type your calculations here')
-    document.add_line('1 + 1')
-    document.add_blank_line
+    @document = Document.new(title: params[:title], contents: params[:contents])
+    @document.add_line('// type your calculations here')
+    @document.add_line('1 + 1')
+    @document.add_blank_line
 
-    render json: document, status: :accepted
+    if @document.create
+      render json: @document, status: :accepted
+    else
+      render json: { errors: @document.errors.full_messages }, status: :unprocessible_entity
+    end
   end
   
   def update
@@ -39,7 +43,7 @@ class Api::V1::DocumentsController < ApplicationController
   private
 
   def document_params
-    params.require(:document).permit(:title, :contents, lines: [:document_id, :input])
+    params.require(:document).permit(:title, :contents)
   end
 
   def get_document

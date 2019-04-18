@@ -25,7 +25,8 @@ class Document < ApplicationRecord
   end
 
   def content=(newContent)
-    self.updateContents(newContent.split('\n'))
+    new_lines = newContent.split('\n')
+    self.update_contents(new_lines)
   end
 
   def update_contents(newContents)
@@ -72,6 +73,7 @@ class Document < ApplicationRecord
     @store = {}
     @expressions = {}
     @results = {}
+    @result_vals = {}
   end
 
   def process
@@ -80,10 +82,13 @@ class Document < ApplicationRecord
     VariableProcessor.new(self.lines) do |var, line|
       @store[var] = line
       @expressions[var] = line.expression
-
       self.calculate_line!(line)
-      @results[var] = line.result_formatted if line.result
-      calculator.store(var, line.result)
+
+      if line.result
+        @results[var] = line.result_formatted
+        @result_vals[var] = line.result
+        calculator.store(var, line.result)
+      end
     end
 
     return @store
@@ -106,7 +111,7 @@ class Document < ApplicationRecord
 
     if !line.result
       result = eval_line(line)
-      line.result = result
+      line.result = result.to_f if result
     end
 
     if line.is_invalid?
@@ -191,7 +196,9 @@ class Document < ApplicationRecord
   private 
 
   def generate_lines
-    self.contents.map.with_index {|input, i| create_line(input, i)}
+    self.contents.map.with_index do |input, i| 
+      create_line(input, i)
+    end
   end
 
   def create_line(input, index)
@@ -199,6 +206,23 @@ class Document < ApplicationRecord
     LineProcessor.process!(line)
     calculate_line!(line)
     return line
+  end
+
+  # def content_replacer
+  #   ContentReplacer.new(self.result_vals).replace(text)
+  # end
+
+  # def replace_vars(text)
+  #   content_replacer.replace(text)
+  # end
+
+  def format_lines
+    replacer = ContentReplacer.new(self.result_vals)
+    replacer.case_sensitive = false
+
+    self.lines.each do |line|
+      line.expression = replacer.apply(line.expression)
+    end
   end
 
   def calculation_lines

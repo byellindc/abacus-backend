@@ -4,7 +4,7 @@ require 'dentaku'
 class LineProcessor
   attr_reader :name, :mode, :errors
   attr_reader :in_unit, :out_unit, :prefix
-  attr_reader :input, :expression, :result
+  attr_reader :input, :expression
   MODES = %s(calculation conversion comment invalid blank)
 
   def initialize(line, store = {})
@@ -69,6 +69,10 @@ class LineProcessor
 
     @line.errors << self.errors if self.errors
     return @line
+  end
+
+  def result
+    @result.try(:to_f) || @result
   end
 
   # def has_variable?
