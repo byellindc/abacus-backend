@@ -11,12 +11,12 @@ class Api::V1::DocumentsController < ApplicationController
   end
 
   def create
-    @document = Document.new(title: params[:title], contents: params[:contents])
-    @document.add_line('// type your calculations here')
-    @document.add_line('1 + 1')
-    @document.add_blank_line
+    @document = Document.new
+    @document.contents << '// type your calculations here'
+    @document.contents << ''
+    # @document.update(title: params[:title], contents: params[:contents])
 
-    if @document.create
+    if @document.save
       render json: @document, status: :accepted
     else
       render json: { errors: @document.errors.full_messages }, status: :unprocessible_entity
